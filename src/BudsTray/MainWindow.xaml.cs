@@ -470,6 +470,8 @@ public partial class MainWindow : Window
     private void Settings_Click(object sender, RoutedEventArgs e) => ShowSettings();
     private void Back_Click(object sender, RoutedEventArgs e) => AnimateOverlay(SettingsPage, SettingsContent, _settingsMotion, false, false);
 
+    internal void ExitForInstaller() => ExitApplication();
+
     private void ExitApplication()
     {
         _exitRequested = true; _refreshTimer?.Stop(); StopSlide(); _controller.Dispose();

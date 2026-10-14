@@ -44,7 +44,7 @@ public partial class App : System.Windows.Application
             if (!created) { _singleInstance.Dispose(); _singleInstance = null; Shutdown(); return; }
             _shutdownSignal = new EventWaitHandle(false, EventResetMode.AutoReset, @"Local\RedmiBudsTray.Shutdown");
             _shutdownWait = ThreadPool.RegisterWaitForSingleObject(_shutdownSignal,
-                (_, _) => Dispatcher.BeginInvoke(() => Shutdown()), null, Timeout.Infinite, true);
+                (_, _) => Dispatcher.BeginInvoke(() => _window?.ExitForInstaller()), null, Timeout.Infinite, true);
         }
         if (!e.Args.Contains("--demo")) PanelDeviceStore.Initialize(BluetoothDeviceFinder.FindAll(), ConnectionPreferences.SelectedAddress);
         _window = new MainWindow();
