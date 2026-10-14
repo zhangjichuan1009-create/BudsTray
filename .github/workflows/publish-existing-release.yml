@@ -1,0 +1,37 @@
+name: Publish verified release assets
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to build
+        required: true
+        default: v0.9.9
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Install NSIS
+        run: choco install nsis --yes --no-progress
+      - name: Build exact tagged source
+        shell: pwsh
+        run: ./scripts/Build.ps1 -MakeNsis 'C:/Program Files (x86)/NSIS/makensis.exe'
+      - name: Publish packages and matching checksums
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          $sourceName = "BudsTray-source-$env:RELEASE_TAG.zip"
+          git archive --format=zip --prefix=BudsTray/ --output="artifacts/$sourceName" HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Source archive failed' }
+          Get-ChildItem artifacts -File | Where-Object Name -match '\.(exe|zip)$' | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLowerInvariant())  $([IO.Path]::GetFileName($_.Path))" } | Set-Content artifacts/SHA256SUMS.txt -Encoding utf8
+          gh release upload $env:RELEASE_TAG artifacts/BudsTray-Setup-*.exe artifacts/BudsTray-win-x64.zip "artifacts/$sourceName" artifacts/SHA256SUMS.txt --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'Release asset upload failed' }
